@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Gestão Financeira</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fb;color:#172033}
+button,input,select,textarea{font:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:250px;background:#111827;color:#fff;padding:24px 16px;display:flex;flex-direction:column}
+.logo{font-size:22px;font-weight:800;padding:8px 12px 30px;letter-spacing:-.5px}
+.logo span{color:#60a5fa}
+.nav{display:grid;gap:7px}
+.nav button{border:0;background:transparent;color:#aeb8c8;text-align:left;padding:13px 14px;border-radius:10px;cursor:pointer}
+.nav button.active,.nav button:hover{background:#1f2937;color:#fff}
+.sidebar-footer{margin-top:auto;color:#718096;font-size:12px;padding:14px}
+main{flex:1;padding:30px;max-width:1500px;margin:auto;width:100%}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+h1{font-size:29px;letter-spacing:-1px}
+.sub{color:#718096;margin-top:5px}
+.primary{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px 17px;font-weight:700;cursor:pointer;box-shadow:0 5px 16px #2563eb25}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.card{background:#fff;border:1px solid #e7ebf2;border-radius:16px;padding:20px;box-shadow:0 4px 18px #10182808}
+.label{font-size:13px;color:#718096}.value{font-size:25px;font-weight:800;margin-top:9px}.green{color:#15945c}.red{color:#dc4545}.blue{color:#2563eb}
+.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+.panel{background:#fff;border:1px solid #e7ebf2;border-radius:16px;padding:20px;box-shadow:0 4px 18px #10182808}
+.panel h2{font-size:17px;margin-bottom:18px}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:14px 8px;text-align:left;border-bottom:1px solid #edf0f5;font-size:13px}
+.table th{color:#718096;font-weight:600}
+.badge{padding:5px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.receber{background:#eafaf2;color:#128152}.pagar{background:#fff0f0;color:#c43838}
+.actions{display:flex;gap:8px}.icon{border:1px solid #e1e6ef;background:#fff;border-radius:8px;padding:7px;cursor:pointer}
+.empty{padding:35px;text-align:center;color:#8a94a6}
+.modal{position:fixed;inset:0;background:#11182775;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}
+.modal.open{display:flex}.box{background:#fff;border-radius:18px;width:min(720px,100%);max-height:92vh;overflow:auto;padding:24px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.close{border:0;background:#eef1f6;border-radius:8px;padding:8px;cursor:pointer}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}
+.field label{font-size:12px;font-weight:700;color:#536174}
+.field input,.field select,.field textarea{border:1px solid #dce2eb;border-radius:9px;padding:11px;background:#fff;outline:none}
+.field textarea{min-height:80px;resize:vertical}.check{display:flex;gap:8px;align-items:center}
+.form-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.secondary{border:1px solid #dce2eb;background:#fff;border-radius:10px;padding:11px 16px;cursor:pointer}
+.signature{height:190px;border:2px dashed #cbd5e1;border-radius:12px;background:#fafbfc;touch-action:none;cursor:crosshair}
+.small{font-size:12px;color:#8a94a6}
+@media(max-width:950px){.sidebar{width:210px}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:650px){.app{display:block}.sidebar{width:100%;padding:12px;position:sticky;top:0;z-index:3}.logo{padding:8px 8px 12px}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap}.sidebar-footer{display:none}main{padding:18px}.top{align-items:flex-start;gap:12px}.top .primary{padding:10px}.cards{grid-template-columns:1fr 1fr}.value{font-size:20px}.form{grid-template-columns:1fr}.field.full{grid-column:auto}.table{min-width:650px}.panel{overflow:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">Ledger<span>.</span></div>
+  <div class="nav">
+    <button class="active">Dashboard</button>
+    <button>Receber</button>
+    <button>Pagar</button>
+    <button>Pessoas</button>
+    <button>Relatórios</button>
+  </div>
+  <div class="sidebar-footer">Gestão financeira pessoal<br>Protótipo local</div>
+</aside>
+
+<main>
+  <div class="top">
+    <div><h1>Visão geral</h1><div class="sub">Controle suas dívidas e recebimentos.</div></div>
+    <button class="primary" id="newDebt">+ Nova dívida</button>
+  </div>
+
+  <section class="cards">
+    <div class="card"><div class="label">Tenho a receber</div><div class="value green" id="receber">R$ 0,00</div></div>
+    <div class="card"><div class="label">Tenho a pagar</div><div class="value red" id="pagar">R$ 0,00</div></div>
+    <div class="card"><div class="label">Total de registros</div><div class="value blue" id="total">0</div></div>
+    <div class="card"><div class="label">Em atraso</div><div class="value" id="atrasadas">0</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Últimos registros</h2>
+      <div style="overflow:auto">
+      <table class="table">
+        <thead><tr><th>Pessoa</th><th>Tipo</th><th>Valor atual</th><th>Vencimento</th><th>Status</th><th></th></tr></thead>
+        <tbody id="debtTable"><tr><td colspan="6" class="empty">Nenhuma dívida registrada.</td></tr></tbody>
+      </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Resumo</h2>
+      <div class="empty" id="summary">Adicione uma dívida para começar.</div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="modal">
+<div class="box">
+  <div class="modal-head"><h2>Nova dívida</h2><button class="close" id="close">✕</button></div>
+  <form id="form">
+    <div class="field"><label>Tipo</label><select id="tipo"><option value="receber">Tenho a receber</option><option value="pagar">Tenho a pagar</option></select></div>
+    <div class="field"><label>Nome da pessoa</label><input id="nome" required placeholder="Ex.: João da Silva"></div>
+    <div class="field"><label>Valor original</label><input id="valor" type="number" min="0" step="0.01" required placeholder="500,00"></div>
+    <div class="field"><label>Data do empréstimo</label><input id="data" type="date" required></div>
+    <div class="field"><label>Vencimento</label><input id="vencimento" type="date"></div>
+    <div class="field"><label>Juros</label><select id="jurosTipo"><option value="nenhum">Sem juros</option><option value="mensal">Porcentagem ao mês</option><option value="diario">Porcentagem ao dia</option></select></div>
+    <div class="field"><label>Taxa (%)</label><input id="taxa" type="number" min="0" step="0.01" value="0"></div>
+    <div class="field"><label>Multa por atraso (%)</label><input id="multa" type="number" min="0" step="0.01" value="0"></div>
+    <div class="field full"><label>Observação</label><textarea id="obs" placeholder="Motivo, forma de pagamento, detalhes..."></textarea></div>
+    <div class="field full">
+      <label>Assinatura</label>
+      <canvas class="signature" id="signature"></canvas>
+      <span class="small">Assine com o dedo ou mouse. Esta versão salva a assinatura no navegador.</span>
+      <button type="button" class="secondary" id="clearSig" style="width:max-content">Limpar assinatura</button>
+    </div>
+    <div class="form-footer"><button type="button" class="secondary" id="cancel">Cancelar</button><button class="primary">Salvar registro</button></div>
+  </form>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const key="ledger_debts_v1";
+let debts=JSON.parse(localStorage.getItem(key)||"[]");
+
+function money(v){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v)}
+function daysBetween(a,b){return Math.max(0,(new Date(b)-new Date(a))/86400000)}
+function calc(d){
+  let original=Number(d.valor), juros=0;
+  const now=new Date(), start=new Date(d.data);
+  const elapsed=daysBetween(start,now);
+  if(d.jurosTipo==="mensal") juros=original*(Number(d.taxa)/100)*(elapsed/30);
+  if(d.jurosTipo==="diario") juros=original*(Number(d.taxa)/100)*elapsed;
+  let multa=0;
+  if(d.vencimento && new Date(d.vencimento)<now && Number(d.multa)>0) multa=original*(Number(d.multa)/100);
+  return original+juros+multa;
+}
+function render(){
+  const receber=debts.filter(d=>d.tipo==="receber").reduce((s,d)=>s+calc(d),0);
+  const pagar=debts.filter(d=>d.tipo==="pagar").reduce((s,d)=>s+calc(d),0);
+  const atrasadas=debts.filter(d=>d.vencimento && new Date(d.vencimento)<new Date()).length;
+  $("receber").textContent=money(receber);$("pagar").textContent=money(pagar);$("total").textContent=debts.length;$("atrasadas").textContent=atrasadas;
+  const tb=$("debtTable");
+  if(!debts.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nenhuma dívida registrada.</td></tr>';$("summary").textContent="Adicione uma dívida para começar.";return}
+  tb.innerHTML=debts.slice().reverse().map((d,i)=>{
+    const atual=calc(d), atras=d.vencimento && new Date(d.vencimento)<new Date();
+    return `<tr><td><b>${esc(d.nome)}</b></td><td><span class="badge ${d.tipo}">${d.tipo==="receber"?"A receber":"A pagar"}</span></td><td><b>${money(atual)}</b><br><span class="small">original ${money(d.valor)}</span></td><td>${d.vencimento?new Date(d.vencimento+"T12:00").toLocaleDateString("pt-BR"):"—"}</td><td>${atras?'<span class="badge pagar">Atrasado</span>':'<span class="badge receber">Em dia</span>'}</td><td><button class="icon" onclick="removeDebt('${d.id}')">Excluir</button></td></tr>`
+  }).join("");
+  $("summary").innerHTML=`<div style="text-align:left;line-height:2"><b>${debts.length}</b> registro(s)<br><span class="green">${money(receber)}</span> a receber<br><span class="red">${money(pagar)}</span> a pagar<br>${atrasadas} em atraso</div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function save(){localStorage.setItem(key,JSON.stringify(debts));render()}
+window.removeDebt=id=>{if(confirm("Excluir este registro?")){debts=debts.filter(d=>d.id!==id);save()}}
+
+$("newDebt").onclick=()=>{$("modal").classList.add("open");$("data").value=new Date().toISOString().slice(0,10)}
+$("close").onclick=$("cancel").onclick=()=>$("modal").classList.remove("open");
+$("form").onsubmit=e=>{
+ e.preventDefault();
+ debts.push({id:crypto.randomUUID(),tipo:$("tipo").value,nome:$("nome").value,valor:Number($("valor").value),data:$("data").value,vencimento:$("vencimento").value,jurosTipo:$("jurosTipo").value,taxa:Number($("taxa").value),multa:Number($("multa").value),obs:$("obs").value,assinatura:$("signature").toDataURL()});
+ save();$("form").reset();clearSig();$("modal").classList.remove("open");
+};
+const canvas=$("signature"),ctx=canvas.getContext("2d");let drawing=false;
+function resize(){const r=canvas.getBoundingClientRect(),ratio=devicePixelRatio||1;canvas.width=r.width*ratio;canvas.height=r.height*ratio;ctx.scale(ratio,ratio);ctx.lineWidth=2;ctx.lineCap="round";ctx.lineJoin="round"}
+resize();addEventListener("resize",resize);
+function point(e){const r=canvas.getBoundingClientRect();return{x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top}}
+function start(e){e.preventDefault();drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y)}
+function move(e){if(!drawing)return;e.preventDefault();const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke()}
+function end(){drawing=false}
+canvas.addEventListener("mousedown",start);canvas.addEventListener("mousemove",move);addEventListener("mouseup",end);
+canvas.addEventListener("touchstart",start,{passive:false});canvas.addEventListener("touchmove",move,{passive:false});canvas.addEventListener("touchend",end);
+function clearSig(){ctx.clearRect(0,0,canvas.width,canvas.height)}
+$("clearSig").onclick=clearSig;
+render();
+</script>
+</body>
+</html>
